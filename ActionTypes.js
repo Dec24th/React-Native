@@ -13,6 +13,10 @@ export const PARTNERS_LOADING = 'PARTNERS_LOADING';
 export const ADD_PARTNERS = 'ADD_PARTNERS';
 export const PARTNERS_FAILED = 'PARTNERS_FAILED';
 
+export const ADD_FAVORITE = 'ADD_FAVORITE';
+
 /*
 this file has all the possible action objects that we can dispatch to reducers to let the application know the current state, including when we are loading data, adding data, and when fetching our data has failed for some reason.
+
+ADDED LINE 16. NOW WE'LL SET UP THE REDUCER TO HANDLE THIS ACTION. See redux/favorites.js
 */
