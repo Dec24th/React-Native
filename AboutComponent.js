@@ -1,7 +1,15 @@
 import React, { Component } from 'react';
 import { ScrollView, Text, FlatList } from 'react-native';
 import { Card, ListItem } from 'react-native-elements';
-import { PARTNERS } from '../shared/partners';
+import { connect } from 'react-redux';
+import { baseUrl } from '../shared/baseUrl';
+import Loading from './LoadingComponent';
+
+const mapStateToProps = state => {
+  return {
+    partners: state.partners
+  };
+};
 
 function Mission() {
 
@@ -18,12 +26,6 @@ function Mission() {
 }
 
 class About extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      partners: PARTNERS
-    }
-  }
 
   render() {
     const renderPartner = ({ item }) => {
@@ -31,10 +33,36 @@ class About extends Component {
         <ListItem
           title={item.name}
           subtitle={item.description}
-          leftAvatar={{ source: require('./images/bootstrap-logo.png') }}
+          leftAvatar={{ source: { uri: baseUrl + item.image } }}
         />
       )
     }
+
+    if (this.props.partners.isLoading) {
+      return (
+        <ScrollView>
+          <Mission />
+          <Card
+            title='Community Partners'
+          >
+            <Loading />
+          </Card>
+        </ScrollView>
+      );
+    }
+    if (this.props.partners.errMess) {
+      return (
+        <ScrollView>
+          <Mission />
+          <Card
+            title='Community Partners'
+          >
+            <Text>{this.props.partners.errMess}</Text>
+          </Card>
+        </ScrollView>
+      )
+    }
+
     return (
       <ScrollView>
         <Mission />
@@ -42,20 +70,14 @@ class About extends Component {
           title='Community Partners'
         >
           <FlatList
-            data={this.state.partners}
+            data={this.props.partners.partners}
             renderItem={renderPartner}
             keyExtractor={item => item.id.toString()}
           />
-
         </Card>
-
       </ScrollView>
     )
   }
-
-
-
-
 
   static navigationOptions = {
     title: 'About Us - & Our His ssstory'
@@ -64,7 +86,7 @@ class About extends Component {
 }
 
 
-export default About;
+export default connect(mapStateToProps)(About);
 
 /*
 
