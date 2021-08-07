@@ -4,6 +4,7 @@ export const CAMPSITES_FAILED = 'CAMPSITES_FAILED';
 
 export const ADD_COMMENTS = 'ADD_COMMENTS';
 export const COMMENTS_FAILED = 'COMMENTS_FAILED';
+export const ADD_COMMENT = 'ADD_COMMENT';
 
 export const PROMOTIONS_LOADING = 'PROMOTIONS_LOADING';
 export const ADD_PROMOTIONS = 'ADD_PROMOTIONS';
@@ -14,6 +15,9 @@ export const ADD_PARTNERS = 'ADD_PARTNERS';
 export const PARTNERS_FAILED = 'PARTNERS_FAILED';
 
 export const ADD_FAVORITE = 'ADD_FAVORITE';
+export const DELETE_FAVORITE = 'DELETE_FAVORITE';
+
+
 
 /*
 this file has all the possible action objects that we can dispatch to reducers to let the application know the current state, including when we are loading data, adding data, and when fetching our data has failed for some reason.

@@ -1,12 +1,15 @@
 import React, { Component } from 'react';
+import * as Animatable from 'react-native-animatable';
 
-import { Text, View, ScrollView, FlatList } from 'react-native';
+import {
+  Text, View, ScrollView, FlatList, Modal, Button, StyleSheet, Alert, PanResponder
+} from 'react-native';
 
-import { Card, Icon } from 'react-native-elements';
+import { Card, Icon, Rating, Input } from 'react-native-elements';
 
 import { connect } from 'react-redux';
 import { baseUrl } from '../shared/baseUrl';
-import { postFavorite } from '../redux/ActionCreators';
+import { postFavorite, postComment } from '../redux/ActionCreators';
 
 
 const mapStateToProps = state => {
@@ -18,9 +21,253 @@ const mapStateToProps = state => {
 };
 
 const mapDispatchToProps = {
-  postFavorite: campsiteId => (postFavorite(campsiteId))
+  postFavorite: campsiteId => (postFavorite(campsiteId)),
+  postComment: (campsiteId, rating, author, text) => (postComment(campsiteId, rating, author, text))
 };
 
+function RenderCampsite(props) {
+
+  const { campsite } = props;
+
+  const view = React.createRef();
+
+  const recognizeDrag = ({ dx }) => (dx < -200) ? true : false;
+
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onPanResponderGrant: () => {
+      view.current.rubberBand(1000)
+        .then(endState => console.log(endState.finished ? 'finished' : 'canceled'));
+    },
+    onPanResponderEnd: (e, gestureState) => {
+      console.log('pan responder end', gestureState);
+      if (recognizeDrag(gestureState)) {
+        Alert.alert(
+          'Add Favorite',
+          'Are you sure you wish to add ' + campsite.name + ' to favorites?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+              onPress: () => console.log('Cancel Pressed')
+            },
+            {
+              text: 'OK',
+              onPress: () => props.favorite ?
+                console.log('Already set as a favorite') : props.markFavorite()
+            }
+          ],
+          { cancelable: false }
+        );
+      }
+      return true;
+    }
+  });
+
+
+  if (campsite) {
+    return (
+      <Animatable.View
+        animation='fadeInDown'
+        duration={2000}
+        delay={1000}
+        ref={view}
+        {...panResponder.panHandlers}>
+        <Card
+          featuredTitle={campsite.name}
+          image={{ uri: baseUrl + campsite.image }}
+        >
+          <Text style={{ margin: 10 }}>
+            {campsite.description}
+          </Text>
+          <View style={styles.cardRow}>
+            <Icon
+              name={props.favorite ? 'heart' : 'heart-o'}
+              type='font-awesome'
+              color='blue'
+              raised
+              reverse
+              onPress={() => props.favorite ?
+                console.log('Already set as a favorite') : props.markFavorite()}
+            />
+            <Icon
+              name={props.favorite ? 'pencil' : 'pencil'}
+              type='font-awesome'
+              color='#5637DD'
+              raised
+              reverse
+              onPress={() => props.onShowModal()}
+            />
+          </View>
+        </Card>
+      </Animatable.View>
+    );
+  }
+  return <View />;
+}
+
+function RenderComments({ comments }) {
+
+  const renderCommentItem = ({ item }) => {
+    return (
+      <View style={{ margin: 10 }}>
+        <Text style={{ fontSize: 14 }}>{item.text}</Text>
+        <Rating style={{
+          alignItems: 'flex-start',
+          paddingVertical: '5%'
+        }}
+          imageSize={10}
+          readonly
+          startingValue={item.rating}
+        />
+        <Text style={{ fontSize: 10 }}>{`-- ${item.author}, ${item.date}`}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <Animatable.View animation='fadeInUp' duration={2000} delay={1000}>
+      <Card title='Comments Here Here!'>
+        <FlatList
+          data={comments} //for its data prop, give it the comments array
+          renderItem={renderCommentItem} //
+          keyExtractor={item => item.id.toString()} //because all comments have a unoq id, set this to set the id for that unik key
+        />
+      </Card>
+    </Animatable.View>
+  )
+}
+
+class CampsiteInfo extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      showModal: false,
+      rating: 5,
+      author: '',
+      text: ''
+    };
+  }
+
+  toggleModal() {
+    this.setState({ showModal: !this.state.showModal });
+  }
+
+  handleComment(campsiteId) {
+    this.props.postComment(campsiteId, this.state.rating, this.state.author, this.state.text);
+    this.toggleModal();
+  }
+  resetForm() {
+    this.setState({
+      rating: 5,
+      author: '',
+      text: ''
+    });
+  }
+
+  markFavorite(campsiteId) {
+    this.props.postFavorite(campsiteId);
+  }
+
+  static navigationOptions = {
+    title: 'Campsite Information Below'
+  }
+
+  render() {
+    const campsiteId = this.props.navigation.getParam('campsiteId');
+    const campsite = this.props.campsites.campsites.filter(campsite => campsite.id === campsiteId)[0];
+    const comments = this.props.comments.comments.filter(comment => comment.campsiteId === campsiteId); //this rsutls in array of all comments that match this particular campsiteId
+    return (
+      <ScrollView>
+        <RenderCampsite campsite={campsite}
+          favorite={this.props.favorites.includes(campsiteId)}
+          markFavorite={() => this.markFavorite(campsiteId)}
+          onShowModal={() => this.toggleModal()}
+        />
+        <RenderComments comments={comments} />
+        <Modal
+          animationType={'slide'}
+          transparent={false}
+          visible={this.state.showModal}
+          onRequestClose={() => this.toggleModal()}
+        >
+          <View style={styles.modal}>
+            <Rating
+              showRating={true}
+              startingValue={this.state.rating}
+              imageSize={40}
+              onFinishRating={rating => this.setState({ rating: rating })}
+              style={{ paddingVertical: 10 }}
+            />
+            <Input
+              placeholder='Your Name'
+              leftIcon={{ type: 'font-awesome', name: 'user-o' }}
+              leftIconContainerStyle={{ paddingRight: 10 }}
+              onChangeText={value => this.setState({ author: value })}
+              value={this.state.author}
+            />
+            <Input
+              placeholder='Add Comment Here'
+              leftIcon={{ type: 'font-awesome', name: 'comment-o' }}
+              leftIconContainerStyle={{ paddingRight: 10 }}
+              onChangeText={value => this.setState({ text: value })}
+              value={this.state.text}
+            />
+            <View style={{ margin: 10 }}>
+              <Button //SUBMIT BUTTON
+                onPress={() => {
+                  this.handleComment(campsiteId);
+                  this.resetForm();
+                }}
+                color='#5637DD'
+                title='Submit'
+              />
+            </View>
+            <View style={{ margin: 10 }}>
+              <Button
+                onPress={() => {
+                  this.toggleModal();
+                  this.resetForm();
+                }}
+                color='#808080'
+                title='Cancel'
+              />
+            </View>
+          </View>
+
+        </Modal>
+      </ScrollView>
+    );
+  }
+}
+
+const styles = StyleSheet.create({
+
+  cardRow: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    margin: 20
+  },
+  modal: {
+    justifyContent: 'center',
+    margin: 20
+  }
+})
+
+export default connect(mapStateToProps, mapDispatchToProps)(CampsiteInfo);
+
+/**
+Icons
+
+ScrollView.
+cards.
+
+
+
+workshop1 Below
+code before Task 1, Bullet 1
 function RenderCampsite(props) {
 
   const { campsite } = props;
@@ -34,15 +281,25 @@ function RenderCampsite(props) {
         <Text style={{ margin: 10 }}>
           {campsite.description}
         </Text>
-        <Icon
-          name={props.favorite ? 'heart' : 'heart-o'}
-          type='font-awesome'
-          color='blue'
-          //raised
-          //reverse
-          onPress={() => props.favorite ?
-            console.log('Already set as a favorite') : props.markFavorite()}
-        />
+        <View>
+          <Icon
+            name={props.favorite ? 'heart' : 'heart-o'}
+            type='font-awesome'
+            color='blue'
+            raised
+            reverse
+            onPress={() => props.favorite ?
+              console.log('Already set as a favorite') : props.markFavorite()}
+          />
+          <Icon
+            name={props.favorite ? 'pencil' : 'heart-o'}
+            type='font-awesome'
+            color='#5637DD'
+            raised
+            reverse
+            onPress={() => props.onShowModal()}
+          />
+        </View>
       </Card>
     );
   }
@@ -100,9 +357,42 @@ class CampsiteInfo extends Component {
 
 export default connect(mapStateToProps, mapDispatchToProps)(CampsiteInfo);
 
-/**
-Icons
 
-ScrollView.
-cards.
+
+CODE CHALLENGE BELOW
+        <View style={styles.container}>
+          <Rating
+              showRating={true}
+              startingValue={this.state.rating}
+              imageSize={40}
+              onFinishRating={onFinishRating={rating => this.setState({rating: rating})}}
+              style={{paddingVertical: 10}}
+          />
+
+
+
+
+          <View style={{margin: 20}}>
+            <Button
+                onPress={() => {
+                  this.handleComment(campsiteId);
+                  this.resetForm();
+                  )}
+                color='#5637DD'
+                title='Submit'
+            />
+          </View>
+
+
+
+
+
+
+          <View style={{margin: 10}}>
+            <Text>
+              {this.state.submittedMessage}
+            </Text>
+          </View>
+
+      </View>
  */
