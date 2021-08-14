@@ -28,7 +28,7 @@ class Directory extends Component {
             title={item.name}
             caption={item.description}
             featured
-            onPress={() => navigate('CampsiteInfo', { campsiteId: item.id })}
+            onPress={() => navigate('CampsiteInfo', { campsiteId: item.id })} //the name of the screen to navigate to, the second is optional
             imageSrc={{ uri: baseUrl + item.image }}
           />
         </Animatable.View>
