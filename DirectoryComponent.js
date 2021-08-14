@@ -16,14 +16,14 @@ class Directory extends Component {
 
   //DIRECTORY NAV SCREEN THERE'S A HEADER WITH A TITLE, HERE WE CAN CONFIGURE THE TEXT FOR THAT TITLE USING THE STATIC KEYWORD. STATIC KEYWORD IS A JS KEYWORD THAT SETS A METHOD ON THE CLASS ITSELF RATHER THAN ON THE OBJECT THAT IS INSTANTIATED FROM THE CLASS
   static navigationOptions = {
-    title: 'Directory Amos'
+    title: 'Directory Stuff'
   }
 
   render() {
     const { navigate } = this.props.navigation;
     const renderDirectoryItem = ({ item }) => {
       return (
-        <Animatable.View animation='fadeInRightBig' duration={2000}>
+        <Animatable.View animation='fadeInRightBig' duration={1000}>
           <Tile
             title={item.name}
             caption={item.description}
